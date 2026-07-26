@@ -1,0 +1,64 @@
+# Build output. CARGO_TARGET_DIR may redirect this elsewhere, so both the
+# in-tree default and a sibling build directory are ignored.
+/target
+target/
+*.pdb
+*.exe
+*.obj
+*.lib
+*.res
+*.rc
+
+# ProcDrift's own runtime state. The application writes state.json under
+# %LOCALAPPDATA%, but an older build imported baseline.json from the working
+# directory, so a stray copy can appear next to the executable. Neither is ever
+# part of the source tree: committing one would publish the process inventory of
+# whichever machine produced it.
+state.json
+state.json.*.tmp
+baseline.json
+
+# Logs and crash artifacts.
+*.log
+*.dmp
+*.etl
+
+# Screenshots and recordings used for issues or the README. Keep binary media
+# out unless it is deliberately added with `git add -f`.
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.mp4
+*.zip
+
+# Local scratch, secrets, and machine-specific configuration.
+.env
+.env.*
+*.local
+scratch/
+tmp/
+.scratch/
+
+# Coding-agent and editor working directories. These routinely contain absolute
+# local paths, transcripts, and machine names.
+.agent/
+.agents/
+.claude/
+.cursor/
+.aider*
+.vscode/
+.idea/
+*.code-workspace
+
+# OS metadata.
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Editor and merge leftovers
+*.bak
+*.orig
+*.rej
+*.rs.bk

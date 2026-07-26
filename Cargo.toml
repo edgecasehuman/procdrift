@@ -1,0 +1,95 @@
+[package]
+name = "procdrift"
+version = "1.0.0"
+edition = "2024"
+rust-version = "1.88"
+license = "MIT"
+description = "A single-executable Windows process monitor that compares the running process list against a path-verified reference snapshot and shows what changed."
+repository = "https://github.com/edgecasehuman/procdrift"
+readme = "README.md"
+keywords = ["windows", "process", "baseline", "dfir", "triage"]
+categories = ["gui", "os::windows-apis"]
+
+[[bin]]
+name = "ProcDrift"
+path = "src/main.rs"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+windows-sys = { version = "0.61", features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Gdi",
+    "Win32_Security",
+    "Win32_Security_WinTrust",
+    "Win32_Security_Cryptography",
+    "Win32_Security_Cryptography_Catalog",
+    # WTHelperProvDataFromStateData and WTHelperGetProvSignerFromChain, used to
+    # read the signer name out of a completed verification, are gated on this.
+    "Win32_Security_Cryptography_Sip",
+    "Win32_Storage_FileSystem",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Registry",
+    "Win32_System_SystemInformation",
+    "Win32_System_Threading",
+    "Win32_UI_Controls",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+] }
+
+[build-dependencies]
+winresource = "0.1"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "z"
+panic = "abort"
+# `strip` removes the symbol table and debug info, but panic locations from
+# dependencies are string literals in .rodata and survive it, so a release build
+# still embeds the absolute path of every registry crate it can panic from. The
+# profile key that would fix this, `trim-paths`, is not stabilized in Cargo 1.97.
+# Published binaries come from the release workflow on a hosted runner and carry
+# only runner paths; a locally built binary carries yours. Do not distribute one.
+strip = "symbols"
+
+# Enforced in CI. These are all clean today; the list exists so they stay that
+# way rather than being rediscovered as a cleanup pass later.
+# `unreadable_literal` is deliberately absent: Win32 HRESULT constants such as
+# 0x800B0100 are looked up as contiguous 8-digit values, so grouping hurts.
+[lints.clippy]
+cast_lossless = "deny"
+cloned_instead_of_copied = "deny"
+doc_markdown = "deny"
+enum_glob_use = "deny"
+explicit_iter_loop = "deny"
+flat_map_option = "deny"
+implicit_clone = "deny"
+inconsistent_struct_constructor = "deny"
+inefficient_to_string = "deny"
+manual_let_else = "deny"
+manual_midpoint = "deny"
+manual_string_new = "deny"
+map_unwrap_or = "deny"
+mut_mut = "deny"
+needless_bool = "deny"
+needless_raw_string_hashes = "deny"
+no_effect_underscore_binding = "deny"
+ptr_as_ptr = "deny"
+range_plus_one = "deny"
+redundant_closure_for_method_calls = "deny"
+redundant_else = "deny"
+ref_option_ref = "deny"
+semicolon_if_nothing_returned = "deny"
+single_char_pattern = "deny"
+single_match_else = "deny"
+stable_sort_primitive = "deny"
+string_add_assign = "deny"
+uninlined_format_args = "deny"
+unnecessary_box_returns = "deny"
+unnecessary_join = "deny"
+unnecessary_semicolon = "deny"
+unnested_or_patterns = "deny"
+unused_async = "deny"
+verbose_bit_mask = "deny"

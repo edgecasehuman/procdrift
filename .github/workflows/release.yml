@@ -1,0 +1,57 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  release:
+    # Guard the manual trigger: on workflow_dispatch from a branch, GITHUB_REF_NAME
+    # is the branch name, and `gh release create` would tag the branch.
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: windows-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+
+      # --locked everywhere: a published binary must be built from exactly the
+      # dependency versions in the committed Cargo.lock.
+      - name: Verify the release build passes every gate
+        run: |
+          cargo fmt --all -- --check
+          cargo clippy --locked --all-targets -- -D warnings
+          cargo test --locked
+
+      - name: Build
+        run: cargo build --locked --release
+
+      # The binary is unsigned, so the hash is the only thing a downloader can
+      # check. Publish it in the release notes rather than asking for trust.
+      - name: Record SHA-256
+        shell: pwsh
+        run: |
+          $hash = (Get-FileHash target\release\ProcDrift.exe -Algorithm SHA256).Hash
+          "SHA-256: ``$hash``" | Out-File -FilePath notes.md -Encoding utf8
+          "" | Out-File -FilePath notes.md -Append -Encoding utf8
+          "This binary is unsigned. SmartScreen will warn on first run until the build earns reputation." | Out-File -FilePath notes.md -Append -Encoding utf8
+          Write-Output "ProcDrift.exe $hash"
+
+      - name: Publish release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create $env:GITHUB_REF_NAME `
+            --title $env:GITHUB_REF_NAME `
+            --notes-file notes.md `
+            target\release\ProcDrift.exe

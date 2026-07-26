@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  pull_request:
+  # Branches only: a tag push is handled by the release workflow, which runs the
+  # same gates. Without this filter every tag builds twice.
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  checks:
+    name: Build, lint, test
+    # ProcDrift is Windows-only: it calls NtQuerySystemInformation, WinVerifyTrust,
+    # and the registry APIs directly. There is nothing to check on another OS.
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      # --locked everywhere: Cargo.lock is committed, so a build that silently
+      # resolves different dependency versions than the one that was reviewed
+      # is a supply-chain gap, not a convenience.
+      - name: Run strict Clippy
+        run: cargo clippy --locked --all-targets -- -D warnings
+
+      # Two tests verify against the live runner: catalog signature verification
+      # of the real kernel32.dll, and a non-empty startup index. Both would pass
+      # vacuously if stubbed, so they run for real here.
+      - name: Run tests
+        run: cargo test --locked
+
+      - name: Build release binary
+        run: cargo build --locked --release

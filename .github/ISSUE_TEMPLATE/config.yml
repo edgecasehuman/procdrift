@@ -1,0 +1,8 @@
+# Puts a security route on the New Issue page itself. SECURITY.md asks people
+# not to disclose vulnerabilities publicly, but that file is only read by
+# someone who goes looking for it.
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security vulnerability (private)
+    url: https://github.com/edgecasehuman/procdrift/security/advisories/new
+    about: Do not open a public issue for a suspected vulnerability. Use the private advisory form; see SECURITY.md.
