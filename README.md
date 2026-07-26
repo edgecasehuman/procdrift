@@ -21,7 +21,16 @@ process. Close it and nothing of it is left running.
 Trust and findings are kept separate, because they answer different questions.
 
 **Trust** is where the executable stands relative to your snapshot:
-`Protected`, `Allowed`, `Known`, or `Unclassified`.
+
+| Trust | Meaning |
+|---|---|
+| Protected | A Windows-critical process. ProcDrift refuses to act on it, because ending it would stop the machine. |
+| Allowed | Its exact path is in your reference snapshot |
+| Known | A Windows-shipped program ProcDrift can describe, but not in your snapshot |
+| Unclassified | Nothing is known about it beyond what this scan observed |
+
+`Protected` is a statement about what ProcDrift will do, not about whether the
+process is benign.
 
 **Findings** are what is true about it right now:
 

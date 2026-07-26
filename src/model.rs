@@ -248,12 +248,9 @@ mod tests {
                 "Currently among the highest CPU users"
             ]
         );
-        assert!(
-            findings
-                .calm_reasons()
-                .iter()
-                .all(|reason| { !reason.contains("malicious") && !reason.contains("threat") })
-        );
+        assert!(findings.calm_reasons().iter().all(|reason| {
+            !reason.contains("malicious") && !reason.contains("threat") && !reason.contains("safe")
+        }));
     }
 
     #[test]

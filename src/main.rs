@@ -1721,7 +1721,7 @@ impl AppState {
         if row.path.is_empty() {
             message(
                 self.hwnd,
-                "Windows did not expose this process path, so it cannot be safely trusted.",
+                "Windows did not expose this process path, so it cannot be added to the baseline.",
                 "Cannot trust process",
                 MB_ICONWARNING | MB_OK,
             );

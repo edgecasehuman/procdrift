@@ -37,8 +37,9 @@ than something a merged pull request does by accident.
 `--locked` is not optional: `Cargo.lock` is committed, and a build that quietly
 resolves different dependency versions is a supply-chain gap. Five tests
 deliberately exercise the live machine: catalog verification against the real
-`kernel32.dll`, a non-empty startup index, and three that scan the running
-process list. All five would pass vacuously if stubbed. Two further tests are
+`kernel32.dll`, a non-empty startup index, two that scan the running process
+list, and one that attempts an action on this process. All five would pass
+vacuously if stubbed. Two further tests are
 `#[ignore]`d: one spawns and kills a disposable child process, the other is a
 manual performance measurement.
 

@@ -6,7 +6,9 @@ fn main() {
         .set("FileDescription", "ProcDrift")
         .set("ProductName", "ProcDrift")
         .set("CompanyName", "ProcDrift")
-        .set("LegalCopyright", "Copyright © 2026 ProcDrift")
+        // Matches LICENSE. The "contributors" wording is deliberate, so the
+        // binary's file properties should not quietly drop it.
+        .set("LegalCopyright", "Copyright © 2026 ProcDrift contributors")
         .set("OriginalFilename", "ProcDrift.exe");
     resource
         .compile()

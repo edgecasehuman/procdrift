@@ -3,7 +3,7 @@
 //!
 //! The point is not to be a threat database. It is to stop a reader from
 //! spending attention on `csrss.exe` or `Memory Compression` when what they
-//! actually want to look at is the one unrecognised binary further down the
+//! actually want to look at is the one unrecognized binary further down the
 //! list. Entries are limited to components shipped by Windows itself, because
 //! third-party descriptions go stale and a confidently wrong description is
 //! worse than none.
@@ -24,7 +24,7 @@ const ENTRIES: &[(&str, &str)] = &[
     ),
     (
         "wininit.exe",
-        "Windows start-up application. Runs background initialisation for the session.",
+        "Windows start-up application. Runs background initialization for the session.",
     ),
     (
         "smss.exe",
@@ -60,7 +60,7 @@ const ENTRIES: &[(&str, &str)] = &[
     ),
     (
         "sihost.exe",
-        "Shell Infrastructure Host. Runs the Start menu, action centre, and parts of the taskbar.",
+        "Shell Infrastructure Host. Runs the Start menu, action center, and parts of the taskbar.",
     ),
     (
         "runtimebroker.exe",

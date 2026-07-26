@@ -38,9 +38,9 @@ jobs:
         run: cargo clippy --locked --all-targets -- -D warnings
 
       # Five tests verify against the live runner: catalog signature verification
-      # of the real kernel32.dll, a non-empty startup index, and three that scan
-      # the running process list. All five would pass vacuously if stubbed, so
-      # they run for real here.
+      # of the real kernel32.dll, a non-empty startup index, two that scan the
+      # running process list, and one that attempts an action on this process.
+      # All five would pass vacuously if stubbed, so they run for real here.
       - name: Run tests
         run: cargo test --locked
 
