@@ -24,6 +24,22 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
 
+      # winresource stamps CARGO_PKG_VERSION into the executable's Windows file
+      # properties, so a tag that disagrees with Cargo.toml would attach a
+      # binary that reports a different version than the release it ships under.
+      - name: Verify the manifest matches the tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME#v}"
+          manifest="$(sed -n '/^\[package\]/,/^\[/p' Cargo.toml \
+            | sed -n 's/^version = "\(.*\)"/\1/p' | head -n 1)"
+          if [ "$tag" != "$manifest" ]; then
+            echo "::error::Cargo.toml is $manifest, but the tag is v$tag" >&2
+            exit 1
+          fi
+          echo "Releasing $manifest"
+
       # --locked everywhere: a published binary must be built from exactly the
       # dependency versions in the committed Cargo.lock.
       - name: Verify the release build passes every gate

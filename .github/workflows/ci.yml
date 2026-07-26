@@ -37,11 +37,55 @@ jobs:
       - name: Run strict Clippy
         run: cargo clippy --locked --all-targets -- -D warnings
 
-      # Two tests verify against the live runner: catalog signature verification
-      # of the real kernel32.dll, and a non-empty startup index. Both would pass
-      # vacuously if stubbed, so they run for real here.
+      # Five tests verify against the live runner: catalog signature verification
+      # of the real kernel32.dll, a non-empty startup index, and three that scan
+      # the running process list. All five would pass vacuously if stubbed, so
+      # they run for real here.
       - name: Run tests
         run: cargo test --locked
 
       - name: Build release binary
         run: cargo build --locked --release
+
+  # `rust-version` in Cargo.toml is a compatibility promise, and the toolchain
+  # pinned in rust-toolchain.toml is far newer than it. Without this job the
+  # promise is never tested, and a dependency bump or a newly stabilized API
+  # would break it silently.
+  msrv:
+    name: Minimum supported Rust
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+        with:
+          key: msrv
+
+      # Read the floor out of the manifest instead of repeating it here, so the
+      # declared version and the tested version cannot drift apart.
+      - name: Resolve the declared minimum
+        id: msrv
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(sed -n '/^\[package\]/,/^\[/p' Cargo.toml \
+            | sed -n 's/^rust-version = "\(.*\)"/\1/p' | head -n 1)"
+          if [ -z "$version" ]; then
+            echo "::error::Cargo.toml declares no rust-version" >&2
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Declared MSRV: $version"
+
+      # The minimum has to be requested by name. rust-toolchain.toml would
+      # otherwise select the pinned compiler and this job would retest that pin.
+      # Only a type check runs: Clippy and rustfmt output legitimately differs
+      # between compiler versions, so those gates belong on the pin alone.
+      - name: Check against the declared minimum
+        shell: bash
+        env:
+          VERSION: ${{ steps.msrv.outputs.version }}
+        run: |
+          set -euo pipefail
+          rustup toolchain install "$VERSION" --profile minimal --no-self-update
+          cargo "+$VERSION" check --locked --all-targets

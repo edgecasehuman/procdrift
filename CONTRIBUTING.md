@@ -16,9 +16,12 @@ screenshot of the whole window.
 
 ## Building
 
-Requires the stable Rust MSVC toolchain and the Visual Studio Build Tools
-(`build.rs` invokes the Windows resource compiler). Windows only — there is
-nothing to build elsewhere.
+Requires rustup and the Visual Studio Build Tools (`build.rs` invokes the
+Windows resource compiler). Windows only — there is nothing to build elsewhere.
+The compiler is pinned in `rust-toolchain.toml` and installs itself on the first
+`cargo` command; do not work around the pin, because Clippy runs with
+`-D warnings` and an unpinned toolchain turns a new Rust release into a broken
+build on an untouched commit.
 
 ```bash
 cargo fmt --all -- --check
@@ -28,6 +31,9 @@ cargo build --locked --release
 ```
 
 All four must pass; CI runs exactly these, in this order, on `windows-latest`.
+A separate job checks the crate against the `rust-version` floor in
+`Cargo.toml`, so raising the minimum has to be a deliberate manifest edit rather
+than something a merged pull request does by accident.
 `--locked` is not optional: `Cargo.lock` is committed, and a build that quietly
 resolves different dependency versions is a supply-chain gap. Five tests
 deliberately exercise the live machine: catalog verification against the real

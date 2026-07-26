@@ -1,0 +1,9 @@
+[toolchain]
+# Pinned rather than tracking stable, because CI runs `clippy -- -D warnings`.
+# On an unpinned toolchain a new Rust release can add or sharpen a lint and
+# break the build of a commit nobody touched. The MSRV job in ci.yml tests the
+# other end of the supported range; this is the compiler contributors and CI
+# actually develop against.
+channel = "1.97.1"
+profile = "minimal"
+components = ["clippy", "rustfmt"]

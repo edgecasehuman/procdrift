@@ -1,6 +1,7 @@
 # ProcDrift
 
 [![CI](https://github.com/edgecasehuman/procdrift/actions/workflows/ci.yml/badge.svg)](https://github.com/edgecasehuman/procdrift/actions/workflows/ci.yml)
+[![Security audit](https://github.com/edgecasehuman/procdrift/actions/workflows/audit.yml/badge.svg)](https://github.com/edgecasehuman/procdrift/actions/workflows/audit.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 A single-executable Windows process monitor that answers one question: **what is
@@ -106,17 +107,20 @@ and no periodic file writes.
 
 ## Build
 
-Requires the stable Rust MSVC toolchain and the Visual Studio Build Tools.
+Requires rustup and the Visual Studio Build Tools. The compiler version is
+pinned in `rust-toolchain.toml` and installs itself on the first `cargo`
+command. The crate also builds on Rust 1.88 and later, which CI verifies
+separately.
 
 ```bash
-cargo build --release
+cargo build --locked --release
 ```
 
 The binary is `target/release/ProcDrift.exe` and is the complete application.
 
 ```bash
-cargo clippy --all-targets -- -D warnings
-cargo test
+cargo clippy --locked --all-targets -- -D warnings
+cargo test --locked
 ```
 
 Some tests deliberately exercise the live machine: catalog verification is
