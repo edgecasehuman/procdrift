@@ -64,6 +64,18 @@ impl State {
         Ok(state.normalized())
     }
 
+    /// Read a legacy `baseline.json` and convert it into current state.
+    ///
+    /// This decides what the user is told is normal on this machine, from a
+    /// file that arrived by being in the right directory under a common name.
+    /// So it insists the file is actually one of ours: a `processes` object
+    /// with at least one entry carrying at least one path. Accepting any file
+    /// that merely parses as JSON would let an unrelated `baseline.json` --
+    /// and it is not a rare name -- install itself as the reference snapshot.
+    ///
+    /// `onboarding_complete` stays false. An imported baseline is a suggestion
+    /// from the filesystem, not a decision the user made, and the first-run
+    /// prompt is where they get to make it.
     pub fn import_v1(path: &Path) -> Result<Self, String> {
         let root: serde_json::Value = serde_json::from_slice(
             &std::fs::read(path)
@@ -78,25 +90,33 @@ impl State {
                 .to_owned(),
             ..Snapshot::default()
         };
-        if let Some(processes) = root.get("processes").and_then(serde_json::Value::as_object) {
-            for (name, record) in processes {
-                let paths = record
-                    .get("paths")
-                    .and_then(serde_json::Value::as_array)
-                    .into_iter()
-                    .flatten()
-                    .filter_map(serde_json::Value::as_str)
-                    .map(normalize_path)
-                    .filter(|path| !path.is_empty())
-                    .collect();
-                snapshot.executables.insert(name.to_lowercase(), paths);
+        let processes = root
+            .get("processes")
+            .and_then(serde_json::Value::as_object)
+            .ok_or_else(|| "not a baseline: no 'processes' object".to_owned())?;
+        for (name, record) in processes {
+            let paths: BTreeSet<String> = record
+                .get("paths")
+                .and_then(serde_json::Value::as_array)
+                .into_iter()
+                .flatten()
+                .filter_map(serde_json::Value::as_str)
+                .map(normalize_path)
+                .filter(|path| !path.is_empty())
+                .collect();
+            if paths.is_empty() {
+                continue;
             }
+            snapshot.executables.insert(name.to_lowercase(), paths);
+        }
+        if snapshot.executables.is_empty() {
+            return Err("not a baseline: no executable carried a path".to_owned());
         }
         Ok(Self {
             version: CURRENT_VERSION,
             snapshot: Some(snapshot),
             allowed_paths: BTreeSet::new(),
-            onboarding_complete: true,
+            onboarding_complete: false,
         })
     }
 
@@ -258,7 +278,53 @@ mod tests {
         let _ = std::fs::remove_file(path);
         assert_eq!(state.version, 2);
         assert!(state.allowed_paths.is_empty());
+        assert!(
+            !state.onboarding_complete,
+            "a baseline found on disk is a suggestion from the filesystem, not the \
+             user's answer to the first-run prompt; marking onboarding complete \
+             would adopt it without ever showing it to them"
+        );
         assert!(state.snapshot.unwrap().executables["a.exe"].contains(r"c:\a.exe"));
+    }
+
+    // `baseline.json` is not a rare name. Before this, any file with that name
+    // that merely parsed as JSON was adopted as the reference snapshot for what
+    // is normal on the machine -- including `{}`, which yields an empty
+    // snapshot in which every running process reads as new.
+    #[test]
+    fn a_file_that_is_not_a_baseline_is_refused_rather_than_adopted() {
+        let directory =
+            std::env::temp_dir().join(format!("procdrift-notbase-{}", std::process::id()));
+        std::fs::create_dir_all(&directory).unwrap();
+
+        for (label, body) in [
+            ("empty object", br"{}".as_slice()),
+            (
+                "unrelated json",
+                br#"{"name":"something else","values":[1,2,3]}"#.as_slice(),
+            ),
+            (
+                "processes is not an object",
+                br#"{"processes":[]}"#.as_slice(),
+            ),
+            (
+                "no process carries a path",
+                br#"{"processes":{"a.exe":{"paths":[]}}}"#.as_slice(),
+            ),
+            (
+                "paths are all blank",
+                br#"{"processes":{"a.exe":{"paths":["","  "]}}}"#.as_slice(),
+            ),
+        ] {
+            let path = directory.join(format!("{}.json", label.replace(' ', "-")));
+            std::fs::write(&path, body).unwrap();
+            assert!(
+                State::import_v1(&path).is_err(),
+                "{label} was accepted as a reference snapshot"
+            );
+        }
+
+        let _ = std::fs::remove_dir_all(&directory);
     }
 
     #[test]

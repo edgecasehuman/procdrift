@@ -44,6 +44,16 @@ on a compromised machine. Names and paths are treated purely as opaque display
 and comparison strings — never executed, never passed to a shell — but a
 process is free to name itself something misleading.
 
+**Where the baseline can come from.** Normally the state file under
+`%LOCALAPPDATA%\ProcDrift\`, written only when you record a snapshot. There is
+one other source: on a first run, with no state file yet, a legacy
+`baseline.json` sitting **next to the executable** is read and offered as a
+starting snapshot. It has to look like one — a `processes` object with at least
+one entry carrying a path — and it does not count as having answered the
+first-run prompt, which names the file it found and lets you record your own
+instead. Nothing else on disk is consulted, and no directory you merely
+launched from is searched.
+
 **What a signature verdict does and does not mean.** `Trusted` means the file on
 disk verified against a security catalog or its embedded signature, and that its
 certificate chain reached a root this machine trusts, at the moment it was

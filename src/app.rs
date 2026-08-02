@@ -303,9 +303,23 @@ impl AppState {
             return;
         }
         self.onboarding_done = true;
+        // A baseline that was found on disk rather than recorded here decides
+        // what this machine is told is normal, so say where it came from and
+        // let the answer be "record my own instead".
+        let provenance = self.scanner.baseline.imported_from.as_ref().map_or_else(
+            String::new,
+            |source| {
+                format!(
+                    "\n\nA reference snapshot was read from {}. It was not recorded on this machine by you. Choosing Yes replaces it.",
+                    source.display()
+                )
+            },
+        );
         let capture = message(
             self.hwnd,
-            "ProcDrift reports evidence, not malware verdicts.\n\nUnclassified means there is not yet enough local evidence. Findings such as Heavy, Parent ended, or Restarting are independent observations.\n\nCapture the currently running executable paths as your reference snapshot now?\n\nChoose No to skip and open Review.",
+            &format!(
+                "ProcDrift reports evidence, not malware verdicts.\n\nUnclassified means there is not yet enough local evidence. Findings such as Heavy, Parent ended, or Restarting are independent observations.{provenance}\n\nCapture the currently running executable paths as your reference snapshot now?\n\nChoose No to skip and open Review."
+            ),
             "Welcome to ProcDrift",
             MB_YESNO,
         ) == 6;
