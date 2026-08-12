@@ -14,6 +14,24 @@ screenshot of the whole window.
 **Do not report security vulnerabilities as issues.** See
 [SECURITY.md](SECURITY.md) for the private channel.
 
+## Secret and personal-data checks
+
+The ignore file is deliberately conservative, but it is not a security
+boundary: `git add -f` can bypass it and a file that was committed once remains
+in history. Install the staged secret hook before making commits:
+
+```sh
+pre-commit install
+pre-commit run --all-files
+```
+
+Before committing, inspect `git diff --cached --name-status` and the staged
+diff. Never commit real machine inventories, event logs, screenshots, browser
+exports, cookies, tokens, credentials, or other personal data. Use synthetic
+fixtures when a test needs an example value. CI repeats the Gitleaks history
+scan, so a finding must be removed and rotated rather than hidden with an
+ignore rule.
+
 ## Building
 
 Requires rustup and the Visual Studio Build Tools (`build.rs` invokes the
