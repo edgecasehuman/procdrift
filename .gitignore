@@ -33,9 +33,77 @@ baseline.json
 *.mp4
 *.zip
 
-# Local scratch, secrets, and machine-specific configuration.
+# Local scratch, secrets, and machine-specific configuration. These rules are a
+# first line of defense only; the staged secret scan in CI is the enforcement
+# layer.
 .env
 .env.*
+*.env
+*.env.*
+!.env.example
+!*.env.example
+.npmrc
+.pypirc
+.netrc
+.authinfo
+credentials/
+credentials.*
+secrets/
+secrets.*
+tokens/
+tokens.*
+private/
+personal/
+confidential/
+sensitive/
+exports/
+captures/
+evidence/
+artifacts/
+reports/
+*.secret
+*.secrets
+*.token
+*.token.*
+*.credentials
+token.txt
+tokens.txt
+secret.txt
+secrets.txt
+credentials.txt
+*.pem
+*.key
+*.keystore
+*.jks
+*.p12
+*.pfx
+*.kdbx
+*.asc
+*.gpg
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+.aws/
+.azure/
+.gcloud/
+.kube/
+.ssh/
+
+# Local data exports and browser/network captures can contain personal text,
+# cookies, authorization headers, or machine identifiers.
+*.sqlite
+*.sqlite3
+*.db
+*.db-*
+*.csv
+*.tsv
+*.jsonl
+*.ndjson
+*.har
+*.pcap
+*.pcapng
+*.trace
 *.local
 scratch/
 tmp/
@@ -62,3 +130,8 @@ desktop.ini
 *.orig
 *.rej
 *.rs.bk
+*.tmp
+*.temp
+dist/
+*.tgz
+*.tar.gz
