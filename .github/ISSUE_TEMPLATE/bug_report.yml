@@ -35,7 +35,10 @@ body:
     id: version
     attributes:
       label: ProcDrift version
-      placeholder: "1.0.0, or the commit SHA if built from source"
+      description: >-
+        The line reported by `ProcDrift --version`, which is also the window
+        title. If you built it yourself, the commit SHA instead.
+      placeholder: "ProcDrift 1.2.3"
     validations:
       required: true
 

@@ -3,6 +3,7 @@
 [![CI](https://github.com/edgecasehuman/procdrift/actions/workflows/ci.yml/badge.svg)](https://github.com/edgecasehuman/procdrift/actions/workflows/ci.yml)
 [![Security audit](https://github.com/edgecasehuman/procdrift/actions/workflows/audit.yml/badge.svg)](https://github.com/edgecasehuman/procdrift/actions/workflows/audit.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![crates.io](https://img.shields.io/crates/v/procdrift.svg)](https://crates.io/crates/procdrift)
 
 A single-executable Windows process monitor that answers one question: **what is
 running now that was not running when this machine was known-good?**
@@ -70,6 +71,21 @@ Download `ProcDrift.exe` from [Releases] and run it. That is the whole install.
 
 [Releases]: https://github.com/edgecasehuman/procdrift/releases
 
+If you would rather compile it than download it, the crate is on [crates.io]:
+
+```bash
+cargo install procdrift
+```
+
+That needs rustup and the Visual Studio Build Tools, and produces the same
+single executable -- see [Build](#build). Two differences are worth knowing. A
+binary you compiled locally carries no mark-of-the-web, so the SmartScreen
+notice below does not apply to it. It also embeds your own build paths, because
+panic locations from dependencies survive `strip`, so it is fine to run and not
+fine to redistribute.
+
+[crates.io]: https://crates.io/crates/procdrift
+
 State is written to `%LOCALAPPDATA%\ProcDrift\state.json`, and only after you
 answer the first-run prompt, capture a snapshot, or change an allowance. Writes
 are atomic. Nothing is written on a timer.
@@ -94,6 +110,12 @@ is asking you to reduce your protection on its say-so.
 Keyboard: `F5` refresh, `Ctrl+F` or `Ctrl+K` search, `Ctrl+C` copy selected
 rows, `Enter` details, `Space` toggle suspend, `F2` allow the selected path,
 `Delete` end process, `Escape` clear search. Click a column heading to sort.
+
+The window title carries the version, and `ProcDrift --version` reports it
+without opening the window. No argument changes how it runs; `--help` says so
+and names where state is kept. Because this is a windows-subsystem binary it is
+never attached to the console that started it, so both answers arrive as a
+dialog rather than as printed text.
 
 Process control (suspend, resume, end, end captured tree) acts only on the
 selected process and re-checks the process identity, so a recycled PID cannot be
