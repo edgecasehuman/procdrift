@@ -21,6 +21,11 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: write
+      # attest-build-provenance signs with a short-lived OIDC token and records
+      # the result in the repository's attestation store. Neither is a secret
+      # this repository holds.
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
@@ -52,16 +57,55 @@ jobs:
       - name: Build
         run: cargo build --locked --release
 
-      # The binary is unsigned, so the hash is the only thing a downloader can
-      # check. Publish it in the release notes rather than asking for trust.
+      # v1.0.1's notes were written by hand after the fact, because the workflow
+      # generated only the hash and the unsigned-binary warning. The reason to
+      # upgrade is the one thing a release page has to carry, and it is known
+      # when the change is made, not when the tag is pushed. An absent section
+      # fails here, while the tag is still re-runnable.
+      - name: Take the release notes from the changelog
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          awk -v want="$version" '
+            $0 ~ ("^## \\[" want "\\]") { inside = 1; next }
+            inside && /^## / { exit }
+            inside { print }
+          ' CHANGELOG.md > notes.md
+          if ! grep -q '[^[:space:]]' notes.md; then
+            echo "::error::CHANGELOG.md has no section for $version" >&2
+            exit 1
+          fi
+          echo "" >> notes.md
+          cat notes.md
+
+      # The binary is unsigned, so publish the hash rather than asking for
+      # trust. It is no longer the only check available -- see the attestation
+      # below -- but it is the one that needs no tooling.
       - name: Record SHA-256
         shell: pwsh
         run: |
           $hash = (Get-FileHash target\release\ProcDrift.exe -Algorithm SHA256).Hash
-          "SHA-256: ``$hash``" | Out-File -FilePath notes.md -Encoding utf8
+          "SHA-256: ``$hash``" | Out-File -FilePath notes.md -Append -Encoding utf8
           "" | Out-File -FilePath notes.md -Append -Encoding utf8
           "This binary is unsigned. SmartScreen will warn on first run until the build earns reputation." | Out-File -FilePath notes.md -Append -Encoding utf8
+          "" | Out-File -FilePath notes.md -Append -Encoding utf8
+          "Verify what produced it with ``gh attestation verify ProcDrift.exe --repo $env:GITHUB_REPOSITORY``." | Out-File -FilePath notes.md -Append -Encoding utf8
           Write-Output "ProcDrift.exe $hash"
+
+      # The published hash says the file has not changed since it was hashed.
+      # It cannot say what produced it, because the same workflow computes and
+      # publishes it. The attestation binds this binary to this workflow, this
+      # commit, and this repository, and is checked with `gh attestation verify`
+      # against a store the release page cannot rewrite. That matters more here
+      # than usual: the binary is unsigned, so a downloader has nothing else.
+      #
+      # Deliberately before the release exists. A failure here leaves the tag
+      # re-runnable rather than leaving an unattested asset published.
+      - name: Attest the binary
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: target/release/ProcDrift.exe
 
       - name: Publish release
         shell: pwsh
